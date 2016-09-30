@@ -8,10 +8,10 @@ ENV SERVER_PORT 8964
 
 # Set up building environment
 RUN apt-get update \
- && apt-get install -y --no-install-recommends $DEPENDENCIES
+ && apt-get install --no-install-recommends -y $DEPENDENCIES
 
 # Get the latest code, build and install
-RUN git clone http://github.com/kalagxw/shadowsocks-libev.git $BASEDIR
+RUN git clone --recursive git://github/kalagxw/shadowsocks-libev.git $BASEDIR
 WORKDIR $BASEDIR
 RUN ./configure \
  && make \
