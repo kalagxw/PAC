@@ -8,7 +8,7 @@ ENV SERVER_PORT 8964
 
 # Set up building environment
 RUN apt-get update \
- && apt-get install -y $DEPENDENCIES
+ && apt-get install -y --no-install-recommends $DEPENDENCIES
 
 # Get the latest code, build and install
 RUN git clone https://github.com/shadowsocks/shadowsocks-libev.git $BASEDIR
