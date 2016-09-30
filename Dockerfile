@@ -11,7 +11,7 @@ RUN apt-get update \
  && apt-get install -y --no-install-recommends $DEPENDENCIES
 
 # Get the latest code, build and install
-RUN git clone https://github.com/shadowsocks/shadowsocks-libev.git $BASEDIR
+RUN git clone http://github.com/kalagxw/shadowsocks-libev.git $BASEDIR
 WORKDIR $BASEDIR
 RUN ./configure \
  && make \
