@@ -1,0 +1,65 @@
+#
+# This is free software, lisence use MIT.
+# 
+# Copyright (C) 2019 P3TERX <https://p3terx.com>
+# Copyright (C) 2019 KFERMercer <KFER.Mercer@gmail.com>
+# 
+# <https://github.com/KFERMercer/OpenWrt-CI>
+#
+
+name: OpenWrt-lean-rb750gl
+
+on:
+  schedule:
+    - cron: 09 09 * * *
+
+jobs:
+
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Checkout
+        run: |
+          git clone https://github.com/coolsnowwolf/lede.git && cd lede && cd package/network/services/dnsmasq/patches && wget --no-check-certificate https://raw.githubusercontent.com/muziling/dnsmasq-chnroute/master/0000-Add-feature-to-support-chnroutes.patch && cd ../../../../../
+      - name: Initialization environment
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          docker rmi `docker images -q`
+          echo "Deleting files, please wait ..."
+          sudo rm -rf /usr/share/dotnet /etc/mysql /etc/php
+          sudo -E apt-get -y purge azure-cli ghc* zulu* hhvm llvm* firefox google* dotnet* powershell openjdk* mysql* php*
+          sudo -E apt-get update
+          sudo -E apt-get -y install build-essential asciidoc vim-common binutils bzip2 gawk gettext git libncurses5-dev libz-dev patch unzip zlib1g-dev lib32gcc1 libc6-dev-i386 subversion flex uglifyjs git-core gcc-multilib p7zip p7zip-full msmtp libssl-dev texinfo libglib2.0-dev xmlto qemu-utils upx libelf-dev autoconf automake libtool autopoint device-tree-compiler
+          sudo -E apt-get -y autoremove --purge
+          sudo -E apt-get clean
+      - name: Update feeds
+        run: |
+          cd lede && ./scripts/feeds update -a && ./scripts/feeds install -a
+      - name: Costom configure file
+        run: |
+          cd lede && rm -f ./.config* && wget https://raw.githubusercontent.com/kalagxw/Lean-op-rb750gl/master/lean-rb750gl && mv ./lean-rb750gl ./.config && make defconfig
+      - name: Make download
+        run: |
+          cd lede
+          make download -j8 &&
+          find dl -size -1024c -exec ls -l {} \;
+          find dl -size -1024c -exec rm -f {} \;
+      - name: Compile firmware
+        run: cd lede && DEBIAN_FRONTEND=noninteractive make -j$(nproc) V=s
+
+      - name: Assemble artifact
+        run: |
+          rm -rf ./artifact/
+          mkdir -p ./artifact/
+          find ./lede/bin/targets/ -name "*combined*img*" | xargs -i mv -f {} ./artifact/
+          find ./lede/bin/targets/ -name "*efi*img*" | xargs -i mv -f {} ./artifact/
+          find ./lede/bin/targets/ -name "*sysupgrade*bin*" | xargs -i mv -f {} ./artifact/
+      - name: Upload artifact
+        uses: actions/upload-artifact@master
+        with:
+          name: OpenWrt firmware
+          path: ./artifact/
